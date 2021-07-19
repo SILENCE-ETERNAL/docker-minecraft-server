@@ -13,30 +13,11 @@ To simply use the latest stable version, run
 
     docker run -d -it -p 25565:25565 -e EULA=TRUE itzg/minecraft-server
 
-where the standard server port, 25565, will be exposed on your host machine.
+where, in this case, the standard server port 25565, will be exposed on your host machine.
 
-If you want to serve up multiple Minecraft servers or just use an alternate port,
-change the host-side port mapping such as
+> If you plan on running a server for a longer amount of time it is highly recommended using a management layer such as [Docker Compose](#using-docker-compose) or [Kubernetes](#deployment-templates-and-examples) to allow for incremental reconfiguration and image upgrades.
 
-    ... -p 25566:25565 ...
-
-will serve your Minecraft server on your host's port 25566 since the `-p` syntax is
-`host-port`:`container-port`.
-
-Speaking of multiple servers, it's handy to give your containers explicit names using `--name`, such as naming this one "mc"
-
-    ... --name mc itzg/minecraft-server
-
-With that you can easily view the logs, stop, or re-start the container:
-
-    docker logs -f mc
-        ( Ctrl-C to exit logs action )
-
-    docker stop mc
-
-    docker start mc
-
-> Be sure to always include `-e EULA=TRUE` in your commands, as Mojang/Microsoft requires EULA acceptance.
+> Be sure to always include `-e EULA=TRUE` in your commands and container definitions, as Mojang/Microsoft requires EULA acceptance.
 
 By default, the container will download the latest version of the "vanilla" [Minecraft: Java Edition server](https://www.minecraft.net/en-us/download/server) provided by Mojang. The [`VERSION`](#versions) and the [`TYPE`](#server-types) can be configured to create many variations of desired Minecraft server. 
 
@@ -145,7 +126,7 @@ By default, the container will download the latest version of the "vanilla" [Min
       * [Enabling Autopause](#enabling-autopause)
    * [Running on RaspberryPi](#running-on-raspberrypi)
 
-<!-- Added by: runner, at: Sun Jul 11 18:28:34 UTC 2021 -->
+<!-- Added by: runner, at: Sun Jul 18 21:20:48 UTC 2021 -->
 
 <!--te-->
 
@@ -212,7 +193,7 @@ When attached in this way you can stop the server, edit the configuration under 
 With Docker Compose, setting up a host attached directory is even easier since relative paths can be configured. For example, with the following `docker-compose.yml` Docker will automatically create/attach the relative directory `minecraft-data` to the container.
 
 ```yaml
-version: "3.8"
+version: "3"
 
 services:
   mc:
@@ -221,6 +202,9 @@ services:
       - 25565:25565
     environment:
       EULA: "TRUE"
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
     volumes:
       # attach a directory relative to the directory containing this compose file
       - ./minecraft-data:/data
@@ -343,20 +327,18 @@ every time you want to create new Minecraft server, you can now use
 `docker-compose.yml` file like the following:
 
 ```yml
-version: "3.8"
+version: "3"
 
-minecraft-server:
-  image: itzg/minecraft-server
-
-  ports:
-    - "25565:25565"
-
-  environment:
-    EULA: "TRUE"
-
-  tty: true
-  stdin_open: true
-  restart: always
+services:
+  mc:
+    image: itzg/minecraft-server
+    ports:
+      - 25565:25565
+    environment:
+      EULA: "TRUE"
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
 ```
 
 and in the same directory as that file run
@@ -450,9 +432,7 @@ An [Airplane](https://github.com/TECHNOVE/Airplane) server, which is a fork of T
 
     -e TYPE=AIRPLANE
 
-> NOTE: The `VERSION` variable is used to select an Airplane branch to download from. The available options are "LATEST" "1.16" "1.17" and "PURPUR"
-
-> NOTE: The 1.17 branch is currently in beta, and is not yet sufficiently stable for production use. Use at your own risk!
+> NOTE: The `VERSION` variable is used to select an Airplane branch to download from. The available options are "LATEST" "1.17" "1.16" "PURPUR" and "PURPUR-1.16"
 
 Extra variables:
 - `AIRPLANE_BUILD=lastSuccessfulBuild` : set a specific Airplane build to use
